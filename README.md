@@ -4,7 +4,18 @@
 
 > 作者 / Author：**KerryChia**
 
-本仓库是可公开的 skill 源码与脚本；**不含**任何公众号 AppSecret / API Key。本地请复制 `.env.example` → `.env` 自行填写。详见 [SECURITY.md](SECURITY.md)。
+## 一键接入
+
+其他 ZCode / Codex agent 可复制以下命令安装本 skill：
+
+```bash
+git clone https://github.com/KerryChia/wechat-publisher.git \
+  ~/.zcode/skills/wechat-publisher
+```
+
+安装后即可在对话中触发：排版公众号文章、上传图片、管理草稿、正式发布。接入（草稿/发布）需自行配置 `.env` 中的 AppID / AppSecret。
+
+本仓库是可公开的 skill 源码与脚本；本地请复制 `.env.example` → `.env` 自行填写。详见 [SECURITY.md](SECURITY.md)。
 
 ## 两条独立工作流
 
