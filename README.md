@@ -6,14 +6,14 @@
 
 ## 一键接入
 
-其他 ZCode / Codex agent 可复制以下命令安装本 skill：
+把下面这段话发给任意 ZCode / Codex agent，它会自动讲解、安装并配置本 skill：
 
-```bash
-git clone https://github.com/KerryChia/wechat-publisher.git \
-  ~/.zcode/skills/wechat-publisher
 ```
-
-安装后即可在对话中触发：排版公众号文章、上传图片、管理草稿、正式发布。接入（草稿/发布）需自行配置 `.env` 中的 AppID / AppSecret。
+帮我接入这个 skill：https://github.com/KerryChia/wechat-publisher
+把它 clone 到 skills 目录，读 SKILL.md 和 README.md 了解它的排版与发布工作流，
+需要凭证时引导我填 .env（WECHAT_APP_ID / WECHAT_APP_SECRET），不要猜测或回显 Secret。
+装好后告诉我能用哪些命令触发排版、草稿和发布。
+```
 
 本仓库是可公开的 skill 源码与脚本；本地请复制 `.env.example` → `.env` 自行填写。详见 [SECURITY.md](SECURITY.md)。
 
