@@ -1,0 +1,16 @@
+{
+  "name": "wechat-publisher-scripts",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "publish": "tsx publish.ts",
+    "test": "node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "marked": "^12.0.2",
+    "sharp": "^0.35.3"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2"
+  }
+}

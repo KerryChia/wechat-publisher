@@ -1,0 +1,32 @@
+# Credentials — never commit
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+
+# Dependencies
+node_modules/
+
+# Build artifacts / generated media
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+# Keep example images under docs/ if any
+!docs/**/*.png
+!docs/**/*.jpg
+!docs/**/*.jpeg
+!docs/**/*.webp
+
+# OS / editor
+.DS_Store
+__MACOSX/
+._*
+.vscode/
+.idea/
+*.log
+*.tmp
+.cache/
