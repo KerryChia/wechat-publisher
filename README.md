@@ -17,21 +17,6 @@
 
 本仓库是可公开的 skill 源码与脚本；本地请复制 `.env.example` → `.env` 自行填写。详见 [SECURITY.md](SECURITY.md)。
 
-## 效果示例
-
-用本 skill 排版后发布到公众号的实样（[原文链接](https://mp.weixin.qq.com/s/FkVIBPVkB0hm_jmXqWEHdQ)）：
-
-<p align="center">
-  <img src="docs/demo-top.jpg" alt="wechat-publisher 排版效果：AI 每日简报 顶部" width="300">
-</p>
-
-<details>
-<summary>查看完整长图</summary>
-
-![完整排版效果](docs/demo-full.jpg)
-
-</details>
-
 ## 两条独立工作流
 
 ### 1. 排版：零凭证
@@ -94,3 +79,7 @@ npx tsx publish.ts --publish <media_id> --confirm-publish
 - 微信接口权限、内容审核和平台策略可能使草稿创建或正式发布失败；请以 API 返回状态为准。
 
 详细规则见 `references/wechat-html-spec.md`；接入步骤见 `references/integration-workflow.md`。
+
+## 效果示例
+
+用本 skill 排版后发布到公众号的实样：[AI 每日简报 · 7 月 17 日](https://mp.weixin.qq.com/s/FkVIBPVkB0hm_jmXqWEHdQ)
