@@ -21,6 +21,7 @@ description: 把文章排版成微信公众号合规 HTML，提供多风格组�
 |---|---|
 | 只需排版、生成 HTML、复制到编辑器 | [排版工作流](references/formatting-workflow.md) → 本地预览交付 |
 | 快速将 Markdown 转成可用正文 | `scripts/render.ts`；说明其为固定主题兜底 |
+| 第一次接入、不知道 AppID/Secret 在哪取 | [Onboarding 引导](references/onboarding.md)，带用户从零拿到凭证、配 IP 白名单、填 .env |
 | 上传图片、创建/查看/更新/删除草稿 | [接入工作流](references/integration-workflow.md) |
 | 从文章到草稿箱 | 先排版并通过本地预检；获得用户同意后再创建草稿 |
 | 正式对外发布 | 先确保草稿存在与内容正确，展示发布摘要，获得**最后一次明确确认**，再运行发布命令并查询状态 |
@@ -37,6 +38,7 @@ description: 把文章排版成微信公众号合规 HTML，提供多风格组�
 ## 接入工作流
 
 - 只在用户要求进入草稿箱/管理草稿时读取 [integration-workflow.md](references/integration-workflow.md)。
+- **用户不知道 AppID/AppSecret 在哪取、IP 白名单怎么配时**，先读 [onboarding.md](references/onboarding.md) 走从零引导，再回到这里。
 - 首次接入需用户自行提供或配置 `WECHAT_APP_ID`、`WECHAT_APP_SECRET`；不要猜测、记录或回显 Secret。`--gen-cover` 另需 `OPENAI_API_KEY`。
 - 先运行预检（如可用），再执行创建或更新。明确告知用户所有外部操作的目标草稿。
 - 用户要求正式发布时：先显示标题、草稿 `media_id`、评论设置；**立即询问“确认现在正式发布吗？”**。只有这一次回答明确肯定，才运行 `--publish <media_id> --confirm-publish`。
@@ -52,6 +54,7 @@ description: 把文章排版成微信公众号合规 HTML，提供多风格组�
 | `references/components.md` | 可直接复制的内联 HTML / 静态 SVG 组件 |
 | `references/wechat-html-spec.md` | 微信 HTML/CSS 格式硬约束 |
 | `references/integration-workflow.md` | 凭证、预检、草稿与发布操作 |
+| `references/onboarding.md` | 新手从零拿凭证、配白名单、填 .env 的引导 |
 | `prompts/wechat-format-prompt.md` | 给网页 AI 的精排提示词 |
 | `scripts/publish.ts` | CLI：预检、草稿生命周期、正式发布 |
 | `scripts/wechat.ts` | 微信官方 API 客户端 |

@@ -17,15 +17,9 @@
 
 本仓库是可公开的 skill 源码与脚本；本地请复制 `.env.example` → `.env` 自行填写。详见 [SECURITY.md](SECURITY.md)。
 
-## 不做什么
+## 从零接入（Onboarding）
 
-为了让边界清楚，以下是本 skill **不**包含的内容：
-
-- ❌ 不包含「去 mp.weixin.qq.com → 开发 → 基本配置 → AppID 在哪里」这类从零开始的逐步引导。本 skill 假设你已经知道在公众号后台哪里取 AppID / AppSecret，只负责读取 `.env` 里的凭证去调 API。
-- ❌ 在「常见错误」表格里，遇到 `Missing WECHAT_APP_ID` 时只说「配置 `.env`」，也不会指向获取途径。
-- ❌ 不主动把新用户从零引导到「拿到 AppID/AppSecret、配好 IP 白名单」——这部分 onboarding 不在仓库内。
-
-所以如果你的需求是「让 skill 主动把新用户从零引导到拿到 AppID/AppSecret、配好 IP 白名单」，当前仓库没有这部分内容。要么你自己已经知道在哪取，要么需要给 skill 补一段 onboarding 引导。
+第一次接入、不知道 AppID / AppSecret 在哪取、IP 白名单怎么配？skill 内置了从零引导：见 [references/onboarding.md](references/onboarding.md)。它会带你走完「取凭证 → 配白名单 → 填 .env → 验证通」四步，并附认证类型对照和常见卡点速查。
 
 ## 两条独立工作流
 

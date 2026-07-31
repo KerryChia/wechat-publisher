@@ -5,6 +5,7 @@
 ## 凭证与前提
 
 - 仅在用户要求进草稿箱或管理草稿时配置 `.env`：`WECHAT_APP_ID`、`WECHAT_APP_SECRET`；自动封面另需 `OPENAI_API_KEY`。
+- **如果用户不知道这些凭证在哪取、或 IP 白名单没配过**，先走 [onboarding.md](onboarding.md) 把凭证和白名单搞定，再回到本文件。
 - 用户应自行从公众号后台取得凭证，并把运行机公网 IP 加入 API 白名单。不要猜、不要在回复中回显 AppSecret。
 - 草稿、更新、删除、提交正式发布都属于外部操作；执行前说明目标和后果。
 
@@ -63,9 +64,9 @@ npx tsx publish.ts --publish-status <publish_id>
 
 | 现象 | 处理 |
 |---|---|
-| `Missing WECHAT_APP_ID` | 配置 `.env`，不要把 Secret 贴到公开位置 |
-| `40164` | 将运行机公网 IP 加入公众号后台白名单 |
-| `48001` | 检查认证类型和接口授权 |
+| `Missing WECHAT_APP_ID` | 没配 `.env` 或字段名拼错；从零开始见 [onboarding.md](onboarding.md) Step 3 |
+| `40164` | 运行机出口 IP 不在白名单；配白名单见 [onboarding.md](onboarding.md) Step 2 |
+| `40193 / 48001` | 公众号未认证或接口没授权；对照 [onboarding.md](onboarding.md) 认证类型表，必要时改走纯排版 |
 | 正文图片过大 | 压缩为 jpg/png/gif 且不超过 1 MB |
 | `HTML file looks like a full document` | 用 `ARTICLE HTML START/END` 包住正文 |
 | 发布被拒绝或处理中 | 查询发布状态；按平台的审核/权限返回处理 |
