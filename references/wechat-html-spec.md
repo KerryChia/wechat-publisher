@@ -21,9 +21,20 @@
 
 ## 图片
 
-- 正文 `<img>` 的 `src` 必须是微信域名 URL（`mmbiz.qpic.cn`）。base64、外链都不渲染。
-- `publish.ts` 已自动处理：本地文件 / 远程 URL / base64 → 调 `media/uploadimg` 上传 → 替换 src。
+### 浏览器复制到编辑器
+
+- 复制前必须克隆正文；合理且 ≤1 MB 的图片 data URI 保留，其他可抓取图片转为 data URI，原 DOM 不变。
+- 必须在点击同步调用栈内用 `Promise<Blob>` 构造 ClipboardItem 并调用 `navigator.clipboard.write`，之后并发处理图片；单图抓取超时为 8 秒。
+- 抓取、CORS、HTTP、超时、格式或大小失败时，仅将克隆里的 `<img>` 换为纯内联 `<span style="display:block">` 占位符，保留外层 frame/caption。占位符使用虚线边框、圆角、浅色背景和稳定高度，提示“图片待替换”“选中本框内文字后直接粘贴原图”。
+- 占位符禁止输出 `alt`、`src`、URL、查询参数、请求错误或其他图片元信息。
+- Clipboard API/ClipboardItem 同步不可用时立即走同步 fallback，不发起抓图：保留已有合规 data URI，其他图片直接占位。异步 write 拒绝后可再尽力 fallback。
+- Clipboard API 必须同时写富文本 `text/html` 与真实 `text/plain`。`execCommand('copy')` fallback 只能复制 clone 的子节点，不得复制带 `article-content` / `wx-article-inner` ID 或壳样式的根容器；任何路径都不得误报成功。
+
+### API 上传
+
+- API 最终正文 `<img>` 的 `src` 必须是微信域名 URL（`mmbiz.qpic.cn`）。`publish.ts` 自动把本地文件 / 远程 URL / base64 调 `media/uploadimg` 上传并替换 `src`。
 - `media/uploadimg` 限制：单张 ≤1MB，jpg/png/gif。封面走 `material/add_material`，≤10MB。
+- API 上传继续 fail-fast：图片不可读、下载失败、超限、格式不支持或微信上传失败时必须终止，不得插入浏览器占位符后继续创建或更新草稿。
 
 ## 排版数值（内置默认主题）
 

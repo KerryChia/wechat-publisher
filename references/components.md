@@ -131,6 +131,15 @@
 </section>
 ```
 
+复制预览的按钮只处理正文克隆：可用图片会转成不超过 1 MB 的 data URI；失败时只替换克隆里的 `<img>`，所以本组件的外层 `<section>` 和 caption 会保留。降级占位符固定使用下面的微信安全结构；运行时应按原图宽高比把 `height` 尽量计算到 160–420px，无法取尺寸时用 220px。占位符绝不输出 `alt`、原 `src`、URL、查询参数或错误详情。外层和内部都使用 `<span style="display:block">`，避免原图位于 `<p>`、`<span>` 或 `<a>` 内时引入新的块级标签嵌套。
+
+```html
+<span style="display:block;width:100%;height:220px;margin:0;padding:0;border:1px dashed #b8bec7;border-radius:10px;background:#f5f6f8;color:#596273;text-align:center;overflow:hidden;">
+  <span style="display:block;padding:42px 14px 0;font-size:15px;line-height:1.6;color:#3f4752;font-weight:700;">图片待替换</span>
+  <span style="display:block;margin:7px 14px 0;font-size:12px;line-height:1.7;color:#596273;">选中本框内文字后直接粘贴原图</span>
+</span>
+```
+
 ### 11. 文末总结块
 
 ```html
