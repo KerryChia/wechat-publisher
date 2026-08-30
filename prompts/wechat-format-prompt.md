@@ -2,7 +2,7 @@
 
 适合没有安装本 skill、但需要生成可复制到公众号编辑器的预览 HTML 的场景。将下方完整提示词和文章原文一起发送给支持 HTML Artifact 的 AI。
 
-> 说明：预览外壳可以有 CSS、ID 与复制脚本；真正复制的文章 fragment 不可以。复制时只复制 `#wx-article-inner` 的内容。
+> 说明：预览外壳可以有 CSS、ID 与复制脚本；真正复制的文章 fragment 不可以。复制时只复制 `#wx-article-inner` 的 `innerHTML` / 子节点，不复制该根容器。
 
 ```text
 你是一名同时理解编辑设计、移动端阅读和微信公众号编辑器限制的中文内容设计师。请把我提供的文章排为可直接复制进微信公众号编辑器的精排 HTML。目标不是把每段塞进卡片，而是建立清晰、克制、有记忆点的移动端阅读体验。保持事实、数字、引述和不确定性完全忠于原文；不要添加未经提供的结论、来源、案例或图片链接。
@@ -32,33 +32,194 @@
 - 组件：每篇选择 3–5 种反复使用即可。可使用节标题、普通段落、强调句、浅色提示、证据/步骤卡、图片相框、短引文、图表、收束清单；不要让连续卡片形成“仪表盘墙”。
 - 结尾：用简短、具体的总结或行动清单收束，避免无意义的“觉得有用请点赞”。
 
-【可直接使用的安全骨架】
-将真正文章放在下面 `wx-article-inner` 内；该容器本身仅用于浏览器预览。文章内容应从内层第一个 `<section>` 开始，并且只含合规内联 HTML。
+【必须使用的独立预览与复制骨架】
+将真正文章放在下面 `wx-article-inner` 内；该容器本身仅用于浏览器预览。文章内容应从内层第一个 `<section>` 开始，并且只含合规内联 HTML。生成物必须完整保留下面的复制逻辑，不得引用外部 JS、CSS 或仓库文件。
+
+复制时必须先 `cloneNode(true)`，绝不改原 DOM。在点击同步调用栈内立即以 `Promise<Blob>` 构造 ClipboardItem 并调用 `navigator.clipboard.write`，然后并发处理图片，每张最多等待 8 秒。合理且不超过 1 MB 的图片 data URI 原样保留；其他图片尝试 `fetch` 后转 data URI。网络/CORS/HTTP/超时/格式/大小失败时，只将克隆里的 `<img>` 替换成微信安全纯内联 `<span>` 占位框，保留外层图片 frame 与 caption；占位符绝不输出 `alt`、`src`、URL 或错误详情。Clipboard API/ClipboardItem 同步不可用时立即构造不抓图的 fallback clone，已有合规 data URI 保留，其他图片直接占位；`execCommand('copy')` 只复制 clone 子节点，不复制带 ID/壳样式的根容器。异步 write 拒绝后可再尽力 fallback，并真实显示成功、占位数量或失败。
 
 <div style="font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif;background:#F3F4F6;padding:18px 10px;">
   <div style="max-width:420px;margin:0 auto 10px;padding:10px 12px;background:#FFFFFF;border:1px solid #E5E7EB;border-radius:10px;text-align:center;">
-    <button onclick="copyWxArticle()" style="padding:9px 18px;border:0;border-radius:8px;background:#1F2937;color:#FFFFFF;font-size:13px;font-weight:700;cursor:pointer;">复制到公众号</button>
-    <span id="wx-copy-message" style="display:none;margin-left:8px;color:#16805D;font-size:12px;">已复制</span>
+    <button id="wx-copy-button" onclick="copyWxArticle()" style="padding:9px 18px;border:0;border-radius:8px;background:#1F2937;color:#FFFFFF;font-size:13px;font-weight:700;cursor:pointer;">复制到公众号</button>
   </div>
   <div id="wx-article-inner" style="max-width:677px;margin:0 auto;background:#FFFFFF;overflow:hidden;">
     <!-- 在这里生成文章 fragment；不要在此区域使用 style 标签、class、id 或脚本 -->
   </div>
 </div>
 <script>
-function copyWxArticle(){
-  var el=document.getElementById('wx-article-inner');
-  var range=document.createRange();range.selectNodeContents(el);
-  var selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);
-  document.execCommand('copy');selection.removeAllRanges();
-  var message=document.getElementById('wx-copy-message');message.style.display='inline';
-  setTimeout(function(){message.style.display='none';},2200);
+const MAX_COPY_IMAGE_BYTES = 1048576;
+const IMAGE_FETCH_TIMEOUT_MS = 8000;
+const COPY_BUTTON_LABEL = '复制到公众号';
+
+function isReasonableDataUri(src) {
+  if (!/^data:image\/(png|jpe?g|gif|webp);(?:charset=[^;,]+;)?base64,/i.test(src)) return false;
+  const body = src.slice(src.indexOf(',') + 1).replace(/\s/g, '');
+  const padding = (body.match(/=*$/) || [''])[0].length;
+  return Math.ceil(body.length * 3 / 4) - padding <= MAX_COPY_IMAGE_BYTES;
+}
+
+function blobToDataUri(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error || new Error('图片读取失败'));
+    reader.readAsDataURL(blob);
+  });
+}
+
+function placeholderHeight(img) {
+  const width = Number(img.naturalWidth || img.width || img.getAttribute('width'));
+  const height = Number(img.naturalHeight || img.height || img.getAttribute('height'));
+  if (!(width > 0 && height > 0)) return 220;
+  return Math.round(Math.min(420, Math.max(160, 335 * height / width)));
+}
+
+function createImagePlaceholder(img) {
+  const box = document.createElement('span');
+  box.setAttribute('style', `display:block;width:100%;height:${placeholderHeight(img)}px;margin:0;padding:0;border:1px dashed #b8bec7;border-radius:10px;background:#f5f6f8;color:#596273;text-align:center;overflow:hidden;`);
+  const title = document.createElement('span');
+  title.setAttribute('style', 'display:block;padding:42px 14px 0;font-size:15px;line-height:1.6;color:#3f4752;font-weight:700;');
+  title.textContent = '图片待替换';
+  const instruction = document.createElement('span');
+  instruction.setAttribute('style', 'display:block;margin:7px 14px 0;font-size:12px;line-height:1.7;color:#596273;');
+  instruction.textContent = '选中本框内文字后直接粘贴原图';
+  box.append(title, instruction);
+  return box;
+}
+
+async function fetchImageDataUri(src) {
+  const controller = new AbortController();
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => {
+      controller.abort();
+      reject(new Error('图片抓取超时'));
+    }, IMAGE_FETCH_TIMEOUT_MS);
+  });
+  try {
+    return await Promise.race([(async () => {
+      const response = await fetch(src, { signal: controller.signal });
+      if (!response.ok) throw new Error('图片下载失败');
+      const declaredSize = Number(response.headers.get('content-length'));
+      if (declaredSize > MAX_COPY_IMAGE_BYTES) throw new Error('图片超过 1MB');
+      const blob = await response.blob();
+      if (!/^image\/(png|jpe?g|gif|webp)$/i.test(blob.type) || blob.size > MAX_COPY_IMAGE_BYTES) throw new Error('图片格式或大小不支持');
+      const dataUri = await blobToDataUri(blob);
+      if (!isReasonableDataUri(dataUri)) throw new Error('图片转换失败');
+      return dataUri;
+    })(), timeout]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function prepareFallbackClone(source) {
+  const clone = source.cloneNode(true);
+  let placeholderCount = 0;
+  for (const img of clone.querySelectorAll('img')) {
+    if (isReasonableDataUri(img.getAttribute('src') || '')) continue;
+    img.replaceWith(createImagePlaceholder(img));
+    placeholderCount += 1;
+  }
+  return { clone, placeholderCount };
+}
+
+async function prepareCopyClone(source) {
+  const clone = source.cloneNode(true);
+  const results = await Promise.all(Array.from(clone.querySelectorAll('img')).map(async (img) => {
+    const src = img.getAttribute('src') || '';
+    if (isReasonableDataUri(src)) return 0;
+    try {
+      img.setAttribute('src', await fetchImageDataUri(src));
+      return 0;
+    } catch (_) {
+      img.replaceWith(createImagePlaceholder(img));
+      return 1;
+    }
+  }));
+  return { clone, placeholderCount: results.reduce((sum, value) => sum + value, 0) };
+}
+
+function execCommandCopy(clone) {
+  const holder = document.createElement('div');
+  holder.setAttribute('contenteditable', 'true');
+  holder.setAttribute('style', 'position:fixed;left:-9999px;top:0;');
+  for (const child of Array.from(clone.childNodes)) holder.appendChild(child.cloneNode(true));
+  document.body.appendChild(holder);
+  const range = document.createRange();
+  range.selectNodeContents(holder);
+  const selection = window.getSelection();
+  selection.removeAllRanges();
+  selection.addRange(range);
+  const copied = document.execCommand('copy');
+  selection.removeAllRanges();
+  holder.remove();
+  return copied;
+}
+
+function deferred() {
+  let resolve;
+  let reject;
+  const promise = new Promise((ok, fail) => { resolve = ok; reject = fail; });
+  return { promise, resolve, reject };
+}
+
+function fallbackCopy(source, cause) {
+  const prepared = prepareFallbackClone(source);
+  if (!execCommandCopy(prepared.clone)) throw new Error('复制失败，请手动选择正文复制', { cause });
+  return prepared;
+}
+
+function startCopyWithinUserActivation(source) {
+  if (!navigator.clipboard?.write || typeof ClipboardItem !== 'function' || typeof Blob !== 'function') {
+    try { return Promise.resolve(fallbackCopy(source, new Error('Clipboard API 不可用'))); }
+    catch (error) { return Promise.reject(error); }
+  }
+  const htmlBlob = deferred();
+  const textBlob = deferred();
+  let writePromise;
+  try {
+    const item = new ClipboardItem({ 'text/html': htmlBlob.promise, 'text/plain': textBlob.promise });
+    writePromise = navigator.clipboard.write([item]);
+  } catch (error) {
+    try { return Promise.resolve(fallbackCopy(source, error)); }
+    catch (fallbackError) { return Promise.reject(fallbackError); }
+  }
+  const preparedPromise = prepareCopyClone(source);
+  preparedPromise.then(({ clone }) => {
+    htmlBlob.resolve(new Blob([clone.innerHTML], { type: 'text/html' }));
+    textBlob.resolve(new Blob([clone.innerText || clone.textContent || ''], { type: 'text/plain' }));
+  }, (error) => {
+    htmlBlob.reject(error);
+    textBlob.reject(error);
+  });
+  return Promise.all([Promise.resolve(writePromise), preparedPromise])
+    .then(([, prepared]) => prepared)
+    .catch((error) => fallbackCopy(source, error));
+}
+
+function showCopyFeedback(message, resetDelay) {
+  const button = document.getElementById('wx-copy-button');
+  button.textContent = message;
+  if (resetDelay) setTimeout(() => { button.textContent = COPY_BUTTON_LABEL; }, resetDelay);
+}
+
+function copyWxArticle() {
+  showCopyFeedback('正在处理图片…');
+  const source = document.getElementById('wx-article-inner');
+  startCopyWithinUserActivation(source).then(({ placeholderCount }) => {
+    showCopyFeedback(placeholderCount ? `已复制（${placeholderCount} 张图片待替换）` : '已复制', 2600);
+  }).catch((error) => {
+    console.error(error);
+    showCopyFeedback('复制失败，请手动选择正文复制', 3600);
+  });
 }
 </script>
 
 【输出要求】
 - 只输出一个可渲染的完整 HTML Artifact，不输出解释、设计说明或 Markdown 代码围栏。
-- 复制按钮和脚本在 `#wx-article-inner` 外；复制区域内不得含任何预览壳代码。
-- 生成前自行检查：层级是否清晰、颜色是否克制、卡片是否重复、图表是否准确、是否出现微信禁用结构、是否有虚构图片 URL。
+- 复制按钮和脚本在 `#wx-article-inner` 外；复制区域内不得含任何预览壳代码。完整 Artifact 必须自包含，不依赖外部文件。
+- 生成前自行检查：层级是否清晰、颜色是否克制、卡片是否重复、图表是否准确、是否出现微信禁用结构、是否有虚构图片 URL；复制逻辑是否克隆正文、保留 frame/caption、不泄漏 URL、写入真实纯文本并准确反馈。
+- 上述占位只用于浏览器复制。若保存 HTML 后改走 API，图片必须由发布脚本上传；任何图片失败都应 fail-fast，不能把占位当成 API 上传降级。
 
 下面是文章原文：
 【在这里粘贴文章】

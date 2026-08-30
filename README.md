@@ -30,6 +30,7 @@
 - 多种内容配方：观点人物、数据分析、案例方法、产品技术、新闻信号。
 - 组件全部使用微信安全的内联样式。
 - 图片可使用真实素材、静态 SVG 或明确标注的占位；不编造图片 URL。
+- 浏览器复制会先克隆正文，并在点击同步调用栈内用 `Promise<Blob>` ClipboardItem 发起写入，再并发抓图（单图 8 秒超时）：≤1 MB 的合理图片 data URI 原样保留，其他图片能抓取则转为 data URI；失败时仅把克隆里的 `<img>` 换成不输出 alt/URL 的内联 `<span>` 占位框，外层相框和图注不变。Clipboard API 同步不可用时立即走不抓图 fallback，且不复制带 ID/壳样式的克隆根容器。
 - Markdown 仍支持固定主题快速渲染，但定位为临时/低格式要求的兜底方案。
 
 从 `references/article-template.html` 开始，并阅读：
@@ -80,6 +81,7 @@ npx tsx publish.ts --publish <media_id> --confirm-publish
 - 支持 `.html` / `.htm` 组件化 HTML 与 `.md` Markdown；完整 HTML 的可发布正文置于 `ARTICLE HTML START/END` 标记区。
 - 正文只使用内联 `style`，不使用 `style` 标签、class、id、脚本、定位布局、动画或互动 SVG。
 - 静态内联 SVG 可用于图表；API 正文图片单张 ≤1 MB（jpg/png/gif），封面 ≤10 MB。
+- 浏览器复制的图片占位是交互式降级，不适用于 API：`publish.ts` 上传正文图片时继续 fail-fast，任何不可读、超限、格式不支持或上传失败都会阻断草稿操作。
 - 微信接口权限、内容审核和平台策略可能使草稿创建或正式发布失败；请以 API 返回状态为准。
 
 详细规则见 `references/wechat-html-spec.md`；接入步骤见 `references/integration-workflow.md`。

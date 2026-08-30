@@ -12,7 +12,8 @@ description: 把文章排版成微信公众号合规 HTML，提供多风格组�
 - 支持 `.html` / `.htm` 组件化 HTML 与 `.md` Markdown；正式文章优先前者。
 - 完整 HTML 的可发布内容仍必须置于 `<!-- ARTICLE HTML START -->` 与 `<!-- ARTICLE HTML END -->` 之间。
 - 正文仅使用内联 `style`；不在正文放 `<style>`、`class`、`id`、脚本、动画或定位布局。静态内联 SVG 可用。
-- 维持微信限制：API 正文图片单张不超过 1 MB（jpg/png/gif），封面不超过 10 MB；正文 API 投递时会自动上传图片并替换为微信 URL。
+- 维持微信限制：API 正文图片单张不超过 1 MB（jpg/png/gif），封面不超过 10 MB；正文 API 投递时会自动上传图片并替换为微信 URL，任一图片无法读取、超限或上传失败时仍 **fail-fast**，不得用占位符悄悄继续。
+- 浏览器复制工作流必须先克隆正文，不改预览原文：点击同步调用栈内立即用 `Promise<Blob>` ClipboardItem 发起写入，再并发抓图（单图 8 秒超时）；保留合理且不超过 1 MB 的图片 data URI，其余图片能抓取则转为 data URI，失败时只在克隆中把该 `<img>` 换成不含 alt/URL 的内联 `<span>` 占位符。Clipboard API 同步不可用时立即走不抓图 fallback，且只复制克隆子节点；所有路径真实报告结果。
 - 草稿创建**绝不自动正式发布**。正式发布属于对外行为，必须紧接发布前获得用户一次明确肯定确认。
 
 ## 选择工作流
@@ -32,8 +33,8 @@ description: 把文章排版成微信公众号合规 HTML，提供多风格组�
 2. 读 [components.md](references/components.md) 选择恰当组件；需要具体配方时读 [style-recipes.md](references/style-recipes.md)。
 3. 从 [article-template.html](references/article-template.html) 复制本地预览壳，在标记区生成仅含微信安全内联 HTML 的文章。
 4. 图表/对比/流程优先使用静态 SVG；照片与截图使用真实、可用且有版权依据的来源。不要编造图片 URL。
-5. 打开本地文件检查手机宽度的层级、留白、图像与断行；只交付复制预览时无需凭证。
-6. 外部网页 AI 可使用 [wechat-format-prompt.md](prompts/wechat-format-prompt.md)；它的浏览器外壳与文章 fragment 严格分离。
+5. 打开本地文件检查手机宽度的层级、留白、图像与断行；只交付复制预览时无需凭证。复制按钮会异步处理克隆中的图片，并真实反馈“已复制”、待替换图片数或失败；占位后在微信编辑器内按提示粘贴原图。
+6. 外部网页 AI 可使用 [wechat-format-prompt.md](prompts/wechat-format-prompt.md)；它的浏览器外壳与文章 fragment 严格分离，生成物必须自带完整复制逻辑，不依赖仓库脚本。
 
 ## 接入工作流
 
