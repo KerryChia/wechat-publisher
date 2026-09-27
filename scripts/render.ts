@@ -1,31 +1,41 @@
 import { marked } from "marked";
 
-const ACCENT = "#07c160";
+const ACCENT = "#c47d00";
+const PALETTE = {
+  ink: "#3a3835",
+  heading: "#5a4630",
+  accent: "#7c4c08",
+  surface: "#fffdf9",
+  soft: "#fdf3e0",
+  line: "#eadfd3",
+};
 
 const S = {
-  container: `font-size:15px;color:#3f3f3f;line-height:1.8;letter-spacing:0.5px;word-break:break-word;padding:0 2px;`,
-  h1: `font-size:20px;font-weight:800;color:#1a1a1a;margin:8px 0;line-height:1.4;`,
-  h2: `font-size:16px;font-weight:700;color:#1a1a1a;margin:8px 0;padding-left:10px;border-left:4px solid ${ACCENT};line-height:1.4;`,
-  h3: `font-size:15px;font-weight:700;color:#1a1a1a;margin:8px 0;line-height:1.4;`,
-  h4: `font-size:15px;font-weight:700;color:#1a1a1a;margin:8px 0;line-height:1.4;`,
-  p: `margin:8px 0;font-size:15px;color:#3f3f3f;line-height:1.8;letter-spacing:0.5px;`,
-  blockquote: `margin:8px 0;padding:10px 14px;background:#f7f7f7;border-left:4px solid ${ACCENT};color:#888;font-size:13px;line-height:1.8;`,
-  list: `margin:8px 0;padding-left:24px;color:#3f3f3f;`,
-  li: `margin:8px 0;font-size:15px;line-height:1.8;`,
-  a: `color:${ACCENT};text-decoration:none;`,
-  strong: `font-weight:700;color:#1a1a1a;`,
-  em: `font-style:italic;`,
-  codeInline: `background:#f2f2f2;color:#c0341d;padding:2px 5px;border-radius:3px;font-size:13px;font-family:Menlo,Consolas,monospace;`,
-  pre: `margin:8px 0;padding:12px 14px;background:#f7f7f7;border-radius:6px;overflow-x:auto;font-size:13px;line-height:1.7;`,
-  codeBlock: `background:none;color:#3f3f3f;padding:0;font-family:Menlo,Consolas,monospace;`,
+  container: `font-size:15px;color:${PALETTE.ink};background:${PALETTE.surface};line-height:1.8;letter-spacing:0.5px;word-break:break-word;padding:0 2px;`,
+  h1: `font-size:20px;font-weight:800;color:${PALETTE.heading};margin:8px 0;line-height:1.4;`,
+  h2: `font-size:16px;font-weight:700;color:${PALETTE.accent};margin:8px 0;padding-left:10px;border-left:4px solid ${ACCENT};line-height:1.4;`,
+  h3: `font-size:15px;font-weight:700;color:${PALETTE.accent};margin:8px 0;line-height:1.4;`,
+  h4: `font-size:15px;font-weight:700;color:${PALETTE.accent};margin:8px 0;line-height:1.4;`,
+  p: `margin:8px 0;font-size:15px;color:${PALETTE.ink};line-height:1.8;letter-spacing:0.5px;text-align:left;`,
+  blockquote: `margin:8px 0;padding:10px 14px;background:${PALETTE.soft};border-left:4px solid ${ACCENT};color:${PALETTE.heading};font-size:13px;line-height:1.8;`,
+  list: `margin:8px 0;padding-left:24px;color:${PALETTE.ink};`,
+  li: `margin:8px 0;font-size:15px;line-height:1.8;color:${PALETTE.ink};`,
+  a: `color:#9a5f00;text-decoration:none;`,
+  strong: `font-weight:700;color:${PALETTE.heading};`,
+  em: `font-style:italic;color:#6b5744;`,
+  codeInline: `background:${PALETTE.soft};color:${PALETTE.accent};padding:2px 5px;border-radius:3px;font-size:13px;font-family:Menlo,Consolas,monospace;`,
+  pre: `margin:8px 0;padding:12px 14px;background:${PALETTE.soft};color:${PALETTE.heading};border-radius:6px;overflow-x:auto;font-size:13px;line-height:1.7;`,
+  codeBlock: `background:none;color:${PALETTE.heading};padding:0;font-family:Menlo,Consolas,monospace;`,
   img: `display:block;max-width:100%;margin:8px auto;border-radius:6px;`,
-  hr: `border:none;border-top:1px solid #e5e5e5;margin:16px 0;`,
-  table: `border-collapse:collapse;width:100%;margin:8px 0;font-size:13px;`,
-  cell: `border:1px solid #e5e5e5;padding:6px 9px;`,
-  th: `border:1px solid #e5e5e5;padding:6px 9px;background:#f7f7f7;font-weight:700;`,
+  hr: `border:none;border-top:1px solid ${PALETTE.line};margin:16px 0;`,
+  table: `border-collapse:collapse;width:100%;margin:8px 0;font-size:13px;color:${PALETTE.ink};`,
+  cell: `border:1px solid ${PALETTE.line};padding:6px 9px;`,
+  th: `border:1px solid ${PALETTE.line};padding:6px 9px;background:${PALETTE.soft};color:${PALETTE.heading};font-weight:700;`,
 };
 
 // Turn plain semantic HTML from marked into WeChat-compliant inline-styled HTML.
+// Do not add text-align:justify to normal paragraphs: WeChat plugin spec 2.6
+// treats alignment as an explicit semantic choice, not a universal default.
 // WeChat strips <style>/<link>/class/id — every style must live on a style attribute.
 function applyTheme(html: string): string {
   let out = html;
